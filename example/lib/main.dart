@@ -18,7 +18,12 @@ class _MyAppState extends State<MyApp> {
   Token _paymentToken;
   PaymentMethod _paymentMethod;
   String _error;
-  String _currentSecret; //set this yourself, e.g using curl
+
+  //this client secret is typically created by a backend system
+  //check https://stripe.com/docs/payments/payment-intents#passing-to-client
+  final String _paymentIntentClientSecret = null;
+
+
   PaymentIntentResult _paymentIntent;
   Source _source;
 
@@ -37,10 +42,11 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     StripePayment.setOptions(StripeOptions(
-      publishableKey: "pk_test_Td50zsO17OMeDeHFw7VWoUZO00Ky35bmfY",
-      merchantId: "Test",
-      androidPayMode: 'test',
-    ));
+
+        publishableKey: "pk_test_aSaULNS8cJU6Tvo20VAXy6rp",
+        merchantId: "Test",
+        androidPayMode: 'test'));
+
   }
 
   void setError(dynamic error) {
@@ -163,31 +169,36 @@ class _MyAppState extends State<MyApp> {
             Divider(),
             RaisedButton(
               child: Text("Confirm Payment Intent"),
-              onPressed: _paymentMethod == null || _currentSecret == null
-                  ? null
-                  : () {
-                      StripePayment.confirmPaymentIntent(
-                        PaymentIntent(
-                          clientSecret: _currentSecret,
-                          paymentMethodId: _paymentMethod.id,
-                        ),
-                      ).then((paymentIntent) {
-                        _scaffoldKey.currentState.showSnackBar(SnackBar(
-                            content: Text(
-                                'Received ${paymentIntent.paymentIntentId}')));
-                        setState(() {
-                          _paymentIntent = paymentIntent;
-                        });
-                      }).catchError(setError);
-                    },
+
+              onPressed:
+                  _paymentMethod == null || _paymentIntentClientSecret == null
+                      ? null
+                      : () {
+                          StripePayment.confirmPaymentIntent(
+                            PaymentIntent(
+                              clientSecret: _paymentIntentClientSecret,
+                              paymentMethodId: _paymentMethod.id,
+                            ),
+                          ).then((paymentIntent) {
+                            _scaffoldKey.currentState.showSnackBar(SnackBar(
+                                content: Text(
+                                    'Received ${paymentIntent.paymentIntentId}')));
+                            setState(() {
+                              _paymentIntent = paymentIntent;
+                            });
+                          }).catchError(setError);
+                        },
+
             ),
             RaisedButton(
               child: Text("Authenticate Payment Intent"),
-              onPressed: _currentSecret == null
+              onPressed: _paymentIntentClientSecret == null
                   ? null
                   : () {
                       StripePayment.authenticatePaymentIntent(
-                              clientSecret: _currentSecret)
+
+                              clientSecret: _paymentIntentClientSecret)
+
                           .then((paymentIntent) {
                         _scaffoldKey.currentState.showSnackBar(SnackBar(
                             content: Text(
