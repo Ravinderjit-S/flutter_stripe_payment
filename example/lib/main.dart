@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:stripe_payment/stripe_payment.dart';
 import 'dart:io';
+import 'package:http/http.dart' as http;
 
 void main() {
   runApp(new MyApp());
@@ -22,6 +23,7 @@ class _MyAppState extends State<MyApp> {
   //check https://stripe.com/docs/payments/payment-intents#passing-to-client
   final String _paymentIntentClientSecret = null;
 
+
   PaymentIntentResult _paymentIntent;
   Source _source;
 
@@ -40,9 +42,11 @@ class _MyAppState extends State<MyApp> {
     super.initState();
 
     StripePayment.setOptions(StripeOptions(
+
         publishableKey: "pk_test_aSaULNS8cJU6Tvo20VAXy6rp",
         merchantId: "Test",
         androidPayMode: 'test'));
+
   }
 
   void setError(dynamic error) {
@@ -138,6 +142,7 @@ class _MyAppState extends State<MyApp> {
                   setState(() {
                     _paymentMethod = paymentMethod;
                   });
+                  _buildSecret(_paymentMethod.id);
                 }).catchError(setError);
               },
             ),
@@ -164,6 +169,7 @@ class _MyAppState extends State<MyApp> {
             Divider(),
             RaisedButton(
               child: Text("Confirm Payment Intent"),
+
               onPressed:
                   _paymentMethod == null || _paymentIntentClientSecret == null
                       ? null
@@ -182,6 +188,7 @@ class _MyAppState extends State<MyApp> {
                             });
                           }).catchError(setError);
                         },
+
             ),
             RaisedButton(
               child: Text("Authenticate Payment Intent"),
@@ -189,7 +196,9 @@ class _MyAppState extends State<MyApp> {
                   ? null
                   : () {
                       StripePayment.authenticatePaymentIntent(
+
                               clientSecret: _paymentIntentClientSecret)
+
                           .then((paymentIntent) {
                         _scaffoldKey.currentState.showSnackBar(SnackBar(
                             content: Text(
@@ -201,6 +210,21 @@ class _MyAppState extends State<MyApp> {
                     },
             ),
             Divider(),
+            RaisedButton(
+              child: Text("Potentially Available Networks"),
+              onPressed: () async {
+                final networks =
+                    await StripePayment.potentiallyAvailableNativePayNetworks();
+                print('networks: $networks');
+              },
+            ),
+            RaisedButton(
+              child: Text("Can Make Native Payment"),
+              onPressed: () async {
+                final res = await StripePayment.canMakeNativePayPayments([]);
+                print('canMakeNativePayPayments: $res');
+              },
+            ),
             RaisedButton(
               child: Text("Native payment"),
               onPressed: () {
@@ -273,5 +297,35 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
     );
+  }
+
+  _buildSecret(String paymentMethodId) async {
+    String json = '''
+                {
+                    "useStripeSdk":true,
+                    "paymentMethodId":"$paymentMethodId",
+                    "currency":"usd",
+                    "items": [
+                        {"id":"photo_subscription"}
+                    ]
+                }
+                ''';
+
+    final url = Uri.http('192.168.1.189:4242', '/create-payment-intent');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': "application/json; charset=utf-8"},
+      body: json,
+    );
+    print(response.body);
+    final jsonResponse = jsonDecode(response.body);
+    final String payError = jsonResponse['error'];
+    final String clientSecret = jsonResponse['clientSecret'];
+    final String requiresAction = jsonResponse['requiresAction'];
+
+    setState(() {
+      _currentSecret = clientSecret;
+    });
   }
 }
