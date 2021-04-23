@@ -16,7 +16,7 @@ CreditCard _$CreditCardFromJson(Map json) {
     addressZip: json['addressZip'] as String,
     brand: json['brand'] == null
         ? null
-        : CreditCardBrand.fromJson(json['brand'] as Map),
+        : CreditCardBrand.fromJson(json['brand'] as String), //R.S. changing to as String from as Map
     cardId: json['cardId'] as String,
     country: json['country'] as String,
     expMonth: json['expMonth'] as int,
