@@ -14,7 +14,7 @@ CreditCard _$CreditCardFromJson(Map json) {
     addressLine2: json['addressLine2'] as String,
     addressState: json['addressState'] as String,
     addressZip: json['addressZip'] as String,
-    brand: json['brand'] == null
+    brand: null//json['brand'] == null
         //? null
         //: json['brand'] as String, //R.S. changing to as String from as Map
     cardId: json['cardId'] as String,
